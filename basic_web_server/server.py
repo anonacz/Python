@@ -20,13 +20,15 @@ PORT_NUMBER = 8081
 
 prog = re.compile("^/[2-3]$")
 
-import os, base64
-def generate_session():
-    return base64.b64encode(os.urandom(16))
+# TODO session handling 
+#import os, base64
+#def generate_session():
+#    return base64.b64encode(os.urandom(16))
 
 
 class Handler(BaseHTTPRequestHandler):
-
+    """Process GET and POST requests.
+    """
     def do_GET(self):
 
         parsed_path = urlparse.urlparse(self.path)
@@ -162,8 +164,6 @@ class Handler(BaseHTTPRequestHandler):
         ips = sd.show()
         sd.generatePDF()
 
-
-
         message = '\r\n'.join(message_parts)
         c = MyContent(self.path, message)
         c.loadTemplate()
@@ -189,14 +189,18 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(c.content)
         elif c.returncode == 404:
             self.send_error(404, c.content)
-
         return
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 class MyContent():
+    """Serve files and alter templates.
 
+    Attributes:
+        path: requested path
+        body: html body content
+    """
     def __init__(self, path, body):
         self.path = path
         self.body = body
@@ -205,6 +209,8 @@ class MyContent():
         self.mimetype = ""
 
     def loadTemplate(self):
+        """Serve files.
+        """
         parsed_path = urlparse.urlparse(self.path)
         realpath=self.path
         if parsed_path.path=="/":
@@ -245,6 +251,8 @@ class MyContent():
             self.returncode = 404
 
     def alterTemplate(self, ips, png='', picnote='', ajax='', fn='log.png'):
+        """Replace template parts.
+        """
         option = ''
         for ip in ips:
             option += '    <option value="{0}">{0}</option>\n'.format(ip)
@@ -257,7 +265,13 @@ class MyContent():
         self.content = self.content.replace("###filename###", fn)
 
 class MyLogs():
+    """Update database.
 
+    Attributes:
+        log_parts: dictionary with all information from header
+        client_address: list with ip on first place
+        parsed_path: requested path
+    """
     def __init__(self, log_parts, client_address, parsed_path):
         self.log_parts = log_parts
         self.client_address = client_address
@@ -308,7 +322,7 @@ class MyLogs():
                     'path.'+self.parsed_path : 1
                     }
             },
-                upsert=True
+                upsert=True # if record in database it is updated else inserted
             )
 
         self.collection_changelog.update_one({
@@ -332,6 +346,11 @@ def pairwise(iterable):
     return zip(a, b)
 
 class showDatabase():
+    """Count changes among links and generates transition graph.
+
+    Attributes:
+        ip_req: all/ip_address Generate graph for all ips or entered ip
+    """
     def __init__(self, ip_req):
         self.ip_req = ip_req
         client = MongoClient(HOST_DB, PORT_DB, maxPoolSize=None)
@@ -339,6 +358,8 @@ class showDatabase():
         self.collection_changelog = db['test-changelogs']
 
     def show(self):
+        """Count changes among links
+        """
         ips = []
         self.d = {
                 (u'/', u'/3') : 0,
@@ -369,6 +390,10 @@ class showDatabase():
         return ips
 
     def generatePDF(self):
+        """Generate transition graph.
+
+        Calls unix tools via 'subprocess': pdflatex, convert
+        """
         hit_count = 0
         for hit in self.d.values():
             hit_count += hit
