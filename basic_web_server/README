@@ -1,0 +1,14 @@
+Basic web server collecting user information and generating link transition
+graph, using MongoDB.
+
+Requirements:
+    Latex packages: tkz-graph, standalone
+    Unix tools: pdflatex, convert, mongod
+
+Launch database: mongod --dbpath PATH
+
+Set database Host and Port:
+    global variables in server.py: HOST_DB, PORT_DB
+
+Set aplication Host and Port:
+    global variables in server.py: HOST_NAME, PORT_NUMBER

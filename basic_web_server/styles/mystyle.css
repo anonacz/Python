@@ -1,0 +1,11 @@
+.right-arrow:after {
+    content:'\2192';
+    font-size: 150px;
+    display: inline;
+}
+table {
+    width: 100px;
+}
+td {
+    text-align: right;
+}
